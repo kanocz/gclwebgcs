@@ -21,13 +21,20 @@ func fatalCond(cond bool, msg ...interface{}) {
 }
 
 var (
-	bucket *storage.BucketHandle
-	ctx    = context.Background()
-	index  = "index.html"
-	n404   = "/404.html"
+	bucket      *storage.BucketHandle
+	ctx         = context.Background()
+	index       = "index.html"
+	n404        = "/404.html"
+	redirectAll = ""
+	allowOrigin = false
 )
 
 func httpMain(w http.ResponseWriter, r *http.Request) {
+	if "" != redirectAll {
+		http.Redirect(w, r, redirectAll+r.URL.Path, http.StatusFound)
+		return
+	}
+
 	uri := r.URL.Path[1:]
 	if "" == uri {
 		uri = index
@@ -70,6 +77,9 @@ func httpMain(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", objAttrs.ContentDisposition)
 	w.Header().Set("Cache-Control", objAttrs.CacheControl)
 	w.Header().Set("ETag", objAttrs.Etag)
+	if allowOrigin {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 	w.WriteHeader(200)
 
 	if _, err := io.Copy(w, reader); nil != err {
@@ -84,12 +94,26 @@ func main() {
 		listen = ":8080"
 	}
 
-	fatalCond("" == os.Getenv("GCS"), "No GCS bucket specified")
+	redirectAll = os.Getenv("REDIRECT")
+	if "" != redirectAll {
+		fatalCond("" == os.Getenv("GCS"), "No GCS bucket specified")
+	}
 
 	client, err := storage.NewClient(ctx)
 	fatalCond(nil != err, "error GCS init:", err)
 
 	bucket = client.Bucket(os.Getenv("GCS"))
+
+	// additional configuration via env variables
+	if "true" == os.Getenv("CORS") {
+		allowOrigin = true
+	}
+	if "" != os.Getenv("INDEX") {
+		index = os.Getenv("INDEX")
+	}
+	if "" != os.Getenv("404") {
+		n404 = os.Getenv("404")
+	}
 
 	http.HandleFunc("/", httpMain)
 	http.ListenAndServe(listen, nil)
