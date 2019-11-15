@@ -40,8 +40,24 @@ func httpMain(w http.ResponseWriter, r *http.Request) {
 		uri = index
 	}
 
+	// in case of folder add index
+	if uri[len(uri)-1] == '/' {
+		uri += index
+	}
+
 	obj := bucket.Object(uri)
 	objAttrs, err := obj.Attrs(ctx)
+
+	if storage.ErrObjectNotExist == err {
+		tmpURI := uri + "/" + index
+		tmpObj := bucket.Object(uri)
+		tmpObjAttrs, err := tmpObj.Attrs(ctx)
+		if nil == err {
+			uri = tmpURI
+			obj = tmpObj
+			objAttrs = tmpObjAttrs
+		}
+	}
 
 	switch err {
 	case storage.ErrBucketNotExist:
