@@ -12,7 +12,7 @@ import (
 	"cloud.google.com/go/storage"
 )
 
-// just small sugar for beautifull code :)
+// just small sugar for beautifully code :)
 func fatalCond(cond bool, msg ...interface{}) {
 	if !cond {
 		return
@@ -72,7 +72,7 @@ func httpMain(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	default:
-		fmt.Println("Error accesing GCS:", err)
+		fmt.Println("Error accessing GCS:", err)
 		http.Error(w, "Internal server error", 500)
 		return
 	case nil:
@@ -81,7 +81,7 @@ func httpMain(w http.ResponseWriter, r *http.Request) {
 	obj = obj.ReadCompressed(true)
 	reader, err := obj.NewReader(ctx)
 	if err != nil {
-		fmt.Println("Error accesing GCS:", err)
+		fmt.Println("Error accessing GCS:", err)
 		http.Error(w, "Internal server error", 500)
 		return
 	}
