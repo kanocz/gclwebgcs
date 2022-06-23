@@ -111,14 +111,12 @@ func main() {
 	}
 
 	redirectAll = os.Getenv("REDIRECT")
-	if "" != redirectAll {
+	if "" == redirectAll {
 		fatalCond("" == os.Getenv("GCS"), "No GCS bucket specified")
+		client, err := storage.NewClient(ctx)
+		fatalCond(nil != err, "error GCS init:", err)
+		bucket = client.Bucket(os.Getenv("GCS"))
 	}
-
-	client, err := storage.NewClient(ctx)
-	fatalCond(nil != err, "error GCS init:", err)
-
-	bucket = client.Bucket(os.Getenv("GCS"))
 
 	// additional configuration via env variables
 	if "true" == os.Getenv("CORS") {
